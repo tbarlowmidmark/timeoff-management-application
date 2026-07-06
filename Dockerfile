@@ -14,7 +14,14 @@
 # 4. Login to running container (to update config (vi config/app.json): 
 #	docker exec -ti --user root alpine_timeoff /bin/sh
 # --------------------------------------------------------------------
-FROM alpine:latest as dependencies
+FROM alpine:latest AS dependencies
+
+# Before anything, add the root CA certificates so that npm can fetch packages securely
+RUN sed -i 's|https://|http://|g' /etc/apk/repositories
+RUN apk add --no-cache ca-certificates
+RUN sed -i 's|http://|https://|g' /etc/apk/repositories
+COPY certs/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates
 
 RUN apk add --no-cache \
     nodejs npm 
@@ -23,6 +30,13 @@ COPY package.json  .
 RUN npm install 
 
 FROM alpine:latest
+
+# Before anything, add the root CA certificates so that npm can fetch packages securely
+RUN sed -i 's|https://|http://|g' /etc/apk/repositories
+RUN apk add --no-cache ca-certificates
+RUN sed -i 's|http://|https://|g' /etc/apk/repositories
+COPY certs/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates
 
 LABEL org.label-schema.schema-version="1.0"
 LABEL org.label-schema.docker.cmd="docker run -d -p 3000:3000 --name alpine_timeoff"
